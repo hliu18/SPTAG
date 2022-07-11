@@ -11,6 +11,8 @@
 #include "inc/Core/KDT/Index.h"
 #include "inc/Core/SPANN/Index.h"
 
+#include "inc/Core/OmpParallelContext.h"
+
 typedef typename SPTAG::Helper::Concurrent::ConcurrentMap<std::string, SPTAG::SizeType> MetadataMap;
 
 using namespace SPTAG;
@@ -465,8 +467,9 @@ ErrorCode
 VectorIndex::MergeIndex(VectorIndex* p_addindex, int p_threadnum, IAbortOperation* p_abort)
 {
     ErrorCode ret = ErrorCode::Success;
+    OmpParallelContext ctx;
     if (p_addindex->m_pMetadata != nullptr) {
-#pragma omp parallel for num_threads(p_threadnum) schedule(dynamic,128)
+#pragma omp parallel for num_threads(p_threadnum) schedule(dynamic,128) firstprivate(ctx)
         for (SizeType i = 0; i < p_addindex->GetNumSamples(); i++)
         {
             if (ret == ErrorCode::ExternalAbort) continue;
@@ -486,7 +489,7 @@ VectorIndex::MergeIndex(VectorIndex* p_addindex, int p_threadnum, IAbortOperatio
         }
     }
     else {
-#pragma omp parallel for num_threads(p_threadnum) schedule(dynamic,128)
+#pragma omp parallel for num_threads(p_threadnum) schedule(dynamic,128) firstprivate(ctx)
         for (SizeType i = 0; i < p_addindex->GetNumSamples(); i++) 
         {
             if (ret == ErrorCode::ExternalAbort) continue;
@@ -859,6 +862,8 @@ void VectorIndex::SortSelections(std::vector<Edge>* selections) {
 
 void VectorIndex::ApproximateRNG(std::shared_ptr<VectorSet>& fullVectors, std::unordered_set<SizeType>& exceptIDS, int candidateNum, Edge* selections, int replicaCount, int numThreads, int numTrees, int leafSize, float RNGFactor, int numGPUs)
 {
+    DefaultThreadContext ctx;
+    void* savedContext = ctx.SavedContext();
     std::vector<std::thread> threads;
     threads.reserve(numThreads);
 
@@ -867,8 +872,9 @@ void VectorIndex::ApproximateRNG(std::shared_ptr<VectorSet>& fullVectors, std::u
 
     for (int tid = 0; tid < numThreads; ++tid)
     {
-        threads.emplace_back([&, tid]()
+        threads.emplace_back([&, tid, savedContext]()
             {
+                ThreadContext ctx2(savedContext);
                 QueryResult resultSet(NULL, candidateNum, false);
 
                 size_t rngFailedCount = 0;

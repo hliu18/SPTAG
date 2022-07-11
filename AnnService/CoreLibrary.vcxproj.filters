@@ -219,6 +219,8 @@
     </ClInclude>
     <ClInclude Include="inc\Core\Common\SIMDUtils.h">
       <Filter>Header Files\Core\Common</Filter>
+    <ClInclude Include="inc\Core\OmpParallelContext.h">
+      <Filter>Header Files\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -290,6 +292,8 @@
     </ClCompile>
     <ClCompile Include="src\Core\Common\SIMDUtils.cpp">
       <Filter>Source Files\Core\Common</Filter>
+    <ClCompile Include="src\Core\OmpParallelContext.cpp">
+      <Filter>Source Files\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
