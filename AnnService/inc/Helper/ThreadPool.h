@@ -10,6 +10,8 @@
 #include <mutex>
 #include <condition_variable>
 
+#include "inc/Core/ThreadContext.h"
+
 namespace SPTAG
 {
     namespace Helper
@@ -43,16 +45,22 @@ namespace SPTAG
                 m_abort.SetAbort(true);
                 m_cond.notify_all();
                 for (auto&& t : m_threads) t.join();
+                DefaultThreadContext ctx;
                 m_threads.clear();
+                m_threads.shrink_to_fit();
             }
 
             void init(int numberOfThreads = 1)
             {
                 m_abort.SetAbort(false);
+
+                DefaultThreadContext ctx;
+                void* savedContext = ctx.SavedContext();
                 for (int i = 0; i < numberOfThreads; i++)
                 {
-                    m_threads.emplace_back([this] {
+                    m_threads.emplace_back([this, savedContext] {
                         Job *j;
+                        ThreadContext ctx2(savedContext);
                         while (get(j))
                         {
                             try 

@@ -26,6 +26,7 @@
 #include "inc/Core/Common/cuda/params.h"
 #endif
 
+#include "inc/Core/ThreadContext.h"
 
 namespace SPTAG
 {
@@ -476,7 +477,8 @@ break;
                 for (int iter = 0; iter < m_iRefineIter - 1; iter++)
                 {
                     auto t1 = std::chrono::high_resolution_clock::now();
-#pragma omp parallel for schedule(dynamic)
+                    OmpParallelContext context;
+#pragma omp parallel for schedule(dynamic) firstprivate(context)
                     for (SizeType i = 0; i < m_iGraphSize; i++)
                     {
                         RefineNode<T>(index, i, false, false, (int)(m_iCEF * m_fCEFScale));
@@ -490,7 +492,8 @@ break;
 
                 if (m_iRefineIter > 0) {
                     auto t1 = std::chrono::high_resolution_clock::now();
-#pragma omp parallel for schedule(dynamic)
+                    OmpParallelContext context;
+#pragma omp parallel for schedule(dynamic) firstprivate(context)
                     for (SizeType i = 0; i < m_iGraphSize; i++)
                     {
                         RefineNode<T>(index, i, false, false, m_iCEF);
@@ -519,7 +522,8 @@ break;
                 newGraph->m_iGraphSize = R;
                 newGraph->m_iNeighborhoodSize = m_iNeighborhoodSize;
 
-#pragma omp parallel for schedule(dynamic)
+                OmpParallelContext context;
+#pragma omp parallel for schedule(dynamic) firstprivate(context)
                 for (SizeType i = 0; i < R; i++)
                 {
                     if ((i * 5) % R == 0) LOG(Helper::LogLevel::LL_Info, "Refine %d%%\n", static_cast<int>(i * 1.0 / R * 100));
